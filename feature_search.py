@@ -1,57 +1,55 @@
 import streamlit as st
 import random
 import time
+from PIL import Image
 
-# Function to create a visual search task with red and blue blocks
-def create_feature_search_task():
-    # Randomly position the blue block among red blocks
-    blocks = ['red'] * 20
-    blue_block_index = random.randint(0, 19)
-    blocks[blue_block_index] = 'blue'
-    
-    # Display the blocks
-    for i in range(5):  # Display blocks in 5 rows for better visual layout
-        cols = st.columns(5)  # Create 5 columns
-        for j in range(5):
-            index = i * 5 + j
-            if index < len(blocks):
-                block_color = blocks[index]
-                if block_color == 'blue':
-                    cols[j].button("Blue", key=f"block_{index}", on_click=block_clicked, args=(index,))
+# Load images
+blue_rectangle = Image.open("blue_rectangle.png")
+red_rectangle = Image.open("red_rectangle.png")
 
-                else:
-                    cols[j].button("Red", key=f"block_{index}")
+# Initial explanation screen
+st.title("Human Visual Search Experiment")
+st.write("""
+    This app will explore aspects of human visual search by having the user perform various visual search tasks. 
+    In each task, you will be tasked with finding a specific feature among a number of items.
+""")
 
-# Global variable to track the start time
-start_time = None
+# Start button
+start = st.button("Start")
 
-# Function to record the time when the blue block is clicked
-def block_clicked(index):
-    global start_time
-    
-    if start_time is None:
-        start_time = time.time()  # Capture the start time when the first block is clicked
-    else:
-        reaction_time = time.time() - start_time
-        st.session_state.reaction_time = reaction_time
-        st.session_state.clicked_index = index
-        st.write(f"Time taken to find the blue block: {reaction_time:.2f} seconds")
-        st.stop()
-
-# Streamlit app layout
-def main():
-    st.title("Feature Search Experiment")
-    st.write("In this task, you need to find the blue block among red blocks.")
-    
-    if 'reaction_time' not in st.session_state:
-        st.session_state.reaction_time = None
-        st.session_state.clicked_index = None
-
-    create_feature_search_task()
-    
-    if st.session_state.reaction_time is not None:
-        st.write(f"Reaction Time: {st.session_state.reaction_time:.2f} seconds.")
-        st.write(f"Block clicked: {st.session_state.clicked_index}")
+if start:
+    for test_round in range(3):  # Run three tests
+        st.write("Press the Blue box")
+        time.sleep(3)  # Display message for 3 seconds
         
-if __name__ == "__main__":
-    main()
+        # Generate a random grid size between 3x3 and 10x10
+        grid_size = random.randint(3, 10)
+
+        # Randomly select a position for the blue rectangle
+        blue_position = (random.randint(0, grid_size - 1), random.randint(0, grid_size - 1))
+
+        # Flag to track if blue rectangle is clicked
+        blue_clicked = False
+
+        # Create a container to hold the grid
+        with st.container():
+            for i in range(grid_size):
+                cols = st.columns(grid_size)
+                for j in range(grid_size):
+                    # Place a single blue rectangle in the grid and fill others with red rectangles
+                    if (i, j) == blue_position:
+                        with cols[j]:
+                            if st.image(blue_rectangle, use_container_width=True):#, output_format="auto", key=f"blue_{i}_{j}"):
+                                # Set flag when blue rectangle is clicked
+                                blue_clicked = True
+                    else:
+                        with cols[j]:
+                            st.image(red_rectangle, use_container_width=True)
+
+        # Break the loop if the blue rectangle was clicked
+        if blue_clicked:
+            st.success("You clicked the Blue box!")
+            st.write("Next task starting in 3 seconds...")
+            time.sleep(3)
+        else:
+            st.warning("Try clicking on the Blue box!")
